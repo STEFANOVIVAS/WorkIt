@@ -86,7 +86,7 @@ class App {
     const { longitude } = position.coords;
     const coords = [latitude, longitude];
     console.log(`https://www.google.com.br/maps/@${latitude},${longitude}`);
-    this.#map = L.map('map').setView(coords, 14);
+    this.#map = L.map('map').setView(coords, 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution:
