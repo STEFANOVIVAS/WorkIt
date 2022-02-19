@@ -1,5 +1,8 @@
 'use strict';
 
+import { Running } from './running.js';
+import { Cycling } from './cycling.js';
+
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -12,50 +15,6 @@ const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 
 let map, mapEvent;
-
-class Workout {
-  date = new Date();
-  id = (Date.now() + '').slice(-10);
-
-  constructor(coords, distance, duration) {
-    this.coords = coords;
-    this.distance = distance;
-    this.duration = duration;
-  }
-  _setDescription() {
-    this.description = `${this.type} on ${this.date.toLocaleString('en-IN', {
-      month: 'long',
-    })} ${this.date.getDate()}`;
-  }
-}
-
-class Running extends Workout {
-  type = 'Running';
-  constructor(coords, distance, duration, cadence) {
-    super(coords, distance, duration);
-    this.cadence = cadence;
-    this.calcPace();
-    this._setDescription();
-  }
-  calcPace() {
-    this.pace = this.distance / this.duration;
-    return this.pace;
-  }
-}
-
-class Cycling extends Workout {
-  type = 'Cycling';
-  constructor(coords, distance, duration, elevationGain) {
-    super(coords, distance, duration);
-    this.elevationGain = elevationGain;
-    this.calcSpeed();
-    this._setDescription();
-  }
-  calcSpeed() {
-    this.speed = this.distance / (this.duration / 60);
-    return this.speed;
-  }
-}
 
 class App {
   #map;
