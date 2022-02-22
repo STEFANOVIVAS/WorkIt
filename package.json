@@ -1,0 +1,28 @@
+{
+  "name": "mapty",
+  "version": "1.0.0",
+  "description": "",
+  "default": "script.js",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html --dist-dir ./dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/STEFANOVIVAS/mapty.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/STEFANOVIVAS/mapty/issues"
+  },
+  "homepage": "https://github.com/STEFANOVIVAS/mapty#readme",
+  "dependencies": {
+    "core-js": "^3.21.1",
+    "leaflet": "^1.7.1",
+    "regenerator-runtime": "^0.13.9"
+  },
+  "devDependencies": {
+    "parcel": "^2.3.2"
+  }
+}
