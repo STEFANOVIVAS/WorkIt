@@ -13,11 +13,19 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+let deleteWorkoutBtn;
+
+// console.log(deleteWorkoutBtn);
+// console.log(inputElevation);
 
 let map, mapEvent;
+// deleteWorkoutBtn.addEventListener('click', function () {
+//   console.log('delete');
+// });
 
 class App {
   #map;
+  #markers = [];
   #mapEvent;
   #workouts = [];
   constructor() {
@@ -133,7 +141,7 @@ class App {
   }
 
   _renderWorkoutMarker(workout) {
-    L.marker(workout.coords)
+    let mark = L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -148,10 +156,13 @@ class App {
         `${workout.type === 'Running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
       )
       .openPopup();
+    console.log(mark);
+    this.#markers.push((this.#markers[workout.id] = mark));
   }
   _renderWorkout(workout) {
     let html = `
-      <li class="workout workout--${workout.type}" data-id=${workout.id}>
+      <li class="workout workout--${workout.type.toLowerCase()}" 
+      data-id="${workout.id}">
         <h2 class="workout__title">${workout.description}</h2>
         <div class="workout__details">
           <span class="workout__icon">${
@@ -178,6 +189,9 @@ class App {
           <span class="workout__value">${workout.pace.toFixed(1)}</span>
           <span class="workout__unit">spm</span>
         </div>
+        <div class="delete--workout">
+            <button class="delete__button">Delete &#128465</button>
+        </div>
       </li>`;
     }
     if (workout.type === 'Cycling') {
@@ -192,9 +206,15 @@ class App {
           <span class="workout__value">${workout.elevationGain}</span>
           <span class="workout__unit">m</span>
         </div>
+        <div class="delete--workout">
+            <button class="delete__button">Delete &#128465</button>
+        </div>
       </li>`;
     }
     form.insertAdjacentHTML('afterend', html);
+    const deleteWorkoutBtn = document.querySelector('.delete--workout');
+    console.log(deleteWorkoutBtn);
+    deleteWorkoutBtn.addEventListener('click', this._deleteWorkout.bind(this));
   }
   _moveToPopup(e) {
     const workoutEl = e.target.closest('.workout');
@@ -203,12 +223,12 @@ class App {
     const workout = this.#workouts.find(
       work => work.id === workoutEl.dataset.id
     );
+    if (!workout) return;
     console.log(workout);
-
     this.#map.setView(workout.coords, 14);
   }
   _setLocalStorage() {
-    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+    localStorage.setItem(`workouts`, JSON.stringify(this.#workouts));
   }
 
   _getLocalStorage() {
@@ -222,6 +242,36 @@ class App {
       console.log(work);
       this._renderWorkout(work);
     });
+  }
+  // _removeLocalStorage(e) {
+  //   const workoutEl = e.target.closest('.workout');
+  //   const works = JSON.parse(localStorage.getItem('workouts'));
+  //   if (!works) return;
+  //   const workoutIndex = works.findIndex(work => work.id === workoutEl);
+  //   works.splice(workoutIndex, 1);
+  //   this.#workouts = works;
+  //   console.log(this.#workouts);
+  //   this.#workouts.forEach(work => {
+  //     console.log(work);
+  //     this._renderWorkout(work);
+  //   });
+
+  _deleteWorkout(e) {
+    //find element
+    const workoutElement = e.target.closest('.workout');
+    if (!workoutElement) return;
+    //delete item from #workouts Array
+    const workoutIndex = this.#workouts.findIndex(
+      work => work.id === workoutElement.dataset.id
+    );
+    this.#workouts.splice(workoutIndex, 1);
+    //Update local storage with the remaining workouts
+    this._setLocalStorage();
+    //Remove workout marker from map
+    const markerId = workoutElement.dataset.id;
+    this.#map.removeLayer(this.#markers[markerId]);
+    //Remove workout div from index.html
+    workoutElement.remove();
   }
 }
 
