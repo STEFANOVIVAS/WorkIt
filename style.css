@@ -44,7 +44,7 @@ a:visited {
 .sidebar {
   flex-basis: 50rem;
   background-color: var(--color-dark--1);
-  padding: 3rem 5rem 4rem 5rem;
+  padding: 3rem 4rem;
   display: flex;
   flex-direction: column;
 }
@@ -116,7 +116,7 @@ a:visited {
 .form {
   background-color: var(--color-dark--2);
   border-radius: 5px;
-  padding: 1.5rem 2.75rem;
+  padding: 1.5rem 1.5rem;
   margin-bottom: 1.75rem;
 
   display: grid;
@@ -153,7 +153,7 @@ a:visited {
 
 .form__input {
   width: 100%;
-  padding: 0.3rem 1.1rem;
+  padding: 0.3rem 0.7rem;
   font-family: inherit;
   font-size: 1.4rem;
   border: none;
@@ -217,4 +217,12 @@ a:visited {
 }
 .cycling-popup .leaflet-popup-content-wrapper {
   border-left: 5px solid var(--color-brand--1);
+}
+.delete--workout {
+  margin: 5px;
+}
+
+.delete__button {
+  width: 80px;
+  height: 25px;
 }
