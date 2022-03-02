@@ -13,7 +13,6 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-let deleteWorkoutBtn;
 
 // console.log(deleteWorkoutBtn);
 // console.log(inputElevation);
@@ -64,6 +63,7 @@ class App {
   }
   _showForm(mapE) {
     this.#mapEvent = mapE;
+    console.log(this.#mapEvent);
     form.classList.remove('hidden');
     inputDistance.focus();
   }
@@ -95,7 +95,9 @@ class App {
     const type = inputType.value;
     const distance = +inputDistance.value;
     const duration = +inputDuration.value;
-    const { lat, lng } = this.#mapEvent.latlng;
+    const { lat, lng } = this.#mapEvent.latlng
+      ? this.#mapEvent.latlng
+      : this.#mapEvent;
     let workout;
 
     //check if data is valid//
@@ -168,12 +170,12 @@ class App {
           <span class="workout__icon">${
             workout.type === 'Running' ? '🏃‍♂️' : '🚴‍♀️'
           }</span>
-          <span class="workout__value">${workout.distance}</span>
+          <span class="workout__value--distance">${workout.distance}</span>
           <span class="workout__unit">km</span>
         </div>
         <div class="workout__details">
           <span class="workout__icon">⏱</span>
-          <span class="workout__value">${workout.duration}</span>
+          <span class="workout__value--duration">${workout.duration}</span>
           <span class="workout__unit">min</span>
         </div>
     `;
@@ -181,16 +183,19 @@ class App {
       html += `
         <div class="workout__details">
           <span class="workout__icon">⚡️</span>
-          <span class="workout__value">${workout.cadence}</span>
+          <span class="workout__value--cadence">${workout.cadence}</span>
           <span class="workout__unit">min/km</span>
         </div>
         <div class="workout__details">
           <span class="workout__icon">🦶🏼</span>
-          <span class="workout__value">${workout.pace.toFixed(1)}</span>
+          <span class="workout__value--pace">${workout.pace.toFixed(1)}</span>
           <span class="workout__unit">spm</span>
         </div>
         <div class="delete--workout">
             <button class="delete__button">Delete &#128465</button>
+        </div>
+        <div class="edit--workout">
+          <button class="edit__button">Edit
         </div>
       </li>`;
     }
@@ -198,23 +203,32 @@ class App {
       html += ` 
         <div class="workout__details">
           <span class="workout__icon">⚡️</span>
-          <span class="workout__value">${workout.speed.toFixed(1)}</span>
+          <span class="workout__value--speed">${workout.speed.toFixed(1)}</span>
           <span class="workout__unit">km/h</span>
         </div>
         <div class="workout__details">
           <span class="workout__icon">⛰</span>
-          <span class="workout__value">${workout.elevationGain}</span>
+          <span class="workout__value--elevation">${
+            workout.elevationGain
+          }</span>
           <span class="workout__unit">m</span>
         </div>
         <div class="delete--workout">
             <button class="delete__button">Delete &#128465</button>
         </div>
+        <div class="edit--workout">
+          <button class="edit__button">Edit
+        </div>
       </li>`;
     }
     form.insertAdjacentHTML('afterend', html);
+    //delete button
     const deleteWorkoutBtn = document.querySelector('.delete--workout');
-    console.log(deleteWorkoutBtn);
     deleteWorkoutBtn.addEventListener('click', this._deleteWorkout.bind(this));
+    //edit button
+    const editWorkoutBtn = document.querySelector('.edit--workout');
+    editWorkoutBtn.addEventListener('click', this._editWorkout.bind(this));
+    console.log(editWorkoutBtn);
   }
   _moveToPopup(e) {
     const workoutEl = e.target.closest('.workout');
@@ -243,18 +257,6 @@ class App {
       this._renderWorkout(work);
     });
   }
-  // _removeLocalStorage(e) {
-  //   const workoutEl = e.target.closest('.workout');
-  //   const works = JSON.parse(localStorage.getItem('workouts'));
-  //   if (!works) return;
-  //   const workoutIndex = works.findIndex(work => work.id === workoutEl);
-  //   works.splice(workoutIndex, 1);
-  //   this.#workouts = works;
-  //   console.log(this.#workouts);
-  //   this.#workouts.forEach(work => {
-  //     console.log(work);
-  //     this._renderWorkout(work);
-  //   });
 
   _deleteWorkout(e) {
     //find element
@@ -272,6 +274,60 @@ class App {
     this.#map.removeLayer(this.#markers[markerId]);
     //Remove workout div from index.html
     workoutElement.remove();
+  }
+  _editWorkout(e) {
+    //find element
+    const workoutElement = e.target.closest('.workout');
+    const workoutIndex = workoutElement.dataset.id;
+    const workout = this.#workouts.find(
+      work => work.id === workoutElement.dataset.id
+    );
+
+    //get original data from form
+
+    const workoutDistance = workoutElement.querySelector(
+      '.workout__value--distance'
+    );
+    const workoutDuration = workoutElement.querySelector(
+      '.workout__value--duration'
+    );
+
+    const workoutCadence = workoutElement.querySelector(
+      '.workout__value--cadence'
+    );
+    const workoutPace = workoutElement.querySelector('.workout__value--pace');
+    const workoutSpeed = workoutElement.querySelector('.workout__value--speed');
+    const workoutElevation = workoutElement.querySelector(
+      '.workout__value--elevation'
+    );
+
+    //hide workout div
+    this._deleteWorkout(e);
+    //show form of this element with original data and type
+    this._showForm(this.#markers[workoutIndex]._latlng);
+    form.classList.remove('hidden');
+    if (workout.type === 'Running') {
+      inputDistance.value = workoutDistance.textContent;
+      inputDuration.value = workoutDuration.textContent;
+      inputCadence.value = workoutCadence.textContent;
+    }
+
+    if (workout.type === 'Cycling') {
+      inputType.value = 'Cycling';
+      inputElevation
+        .closest('.form__row')
+        .classList.remove('form__row--hidden');
+      inputCadence.closest('.form__row').classList.add('form__row--hidden');
+
+      inputDistance.value = workoutDistance.textContent;
+      inputDuration.value = workoutDuration.textContent;
+      inputElevation.value = workoutElevation.textContent;
+    }
+    //submit new data
+
+    //exclude or edit workout data from this.#workouts
+
+    //insert new data in the local storage
   }
 }
 
