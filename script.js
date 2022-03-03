@@ -51,6 +51,7 @@ class App {
     const { latitude } = position.coords;
     const { longitude } = position.coords;
     const coords = [latitude, longitude];
+    // this._geolocation(...coords);
     console.log(`https://www.google.com.br/maps/@${latitude},${longitude}`);
     this.#map = L.map('map').setView(coords, 13);
 
@@ -98,8 +99,9 @@ class App {
     const { lat, lng } = this.#mapEvent.latlng
       ? this.#mapEvent.latlng
       : this.#mapEvent;
-    let workout;
 
+    let workout;
+    //geolocation
     //check if data is valid//
     //if workout type running, create running object
     if (type === 'Running') {
@@ -125,21 +127,9 @@ class App {
 
       workout = new Cycling([lat, lng], distance, duration, elevationGain);
     }
-    //add new object to workout array
-    this.#workouts.push(workout);
-    console.log(workout);
 
-    //render workout object on map as a marker
-    this._renderWorkoutMarker(workout);
-
-    //render workout on list
-    this._renderWorkout(workout);
-
-    //Storage data in local storage api
-    this._setLocalStorage();
-
-    //hidden form and clear data
-    this._hideForm();
+    //async function to render location and then add new object to workout array
+    this._addNewWorkout(workout);
   }
 
   _renderWorkoutMarker(workout) {
@@ -154,11 +144,10 @@ class App {
           className: `${workout.type}-popup`,
         })
       )
-      .setPopupContent(
-        `${workout.type === 'Running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
-      )
+      .setPopupContent(`${workout.type} in ${workout.locationInfo}`)
       .openPopup();
     console.log(mark);
+    console.log(workout);
     this.#markers.push((this.#markers[workout.id] = mark));
   }
   _renderWorkout(workout) {
@@ -323,11 +312,38 @@ class App {
       inputDuration.value = workoutDuration.textContent;
       inputElevation.value = workoutElevation.textContent;
     }
-    //submit new data
+  }
+  _addNewWorkout(workout) {
+    fetch(
+      `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0]}&lon=${workout.coords[1]}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
+    )
+      .then(response => {
+        if (!response.ok)
+          throw new Error(`Location doesn't existis. Please try again!`);
+        return response.json();
+      })
+      .then(result => {
+        workout.locationInfo = `${result.features[0].properties.city} - ${result.features[0].properties.country}`;
+        return workout;
+      })
+      .then(workout => {
+        this.#workouts.push(workout);
+        console.log(this.#workouts);
 
-    //exclude or edit workout data from this.#workouts
+        //render workout object on map as a marker
+        // this._renderWorkoutMarker(workout);
+        this._renderWorkoutMarker(workout);
 
-    //insert new data in the local storage
+        //render workout on list
+        this._renderWorkout(workout);
+
+        //Storage data in local storage api
+        this._setLocalStorage();
+
+        //hidden form and clear data
+        this._hideForm();
+      })
+      .catch(error => console.log(error));
   }
 }
 
