@@ -23,6 +23,7 @@ let map, mapEvent;
 // });
 
 class App {
+  #workoutGroup;
   #map;
   #markers = [];
   #mapEvent;
@@ -53,6 +54,8 @@ class App {
     const coords = [latitude, longitude];
     // this._geolocation(...coords);
     console.log(`https://www.google.com.br/maps/@${latitude},${longitude}`);
+    console.log(this.#markers);
+
     this.#map = L.map('map').setView(coords, 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -61,6 +64,15 @@ class App {
     }).addTo(this.#map);
     this.#map.on('click', this._showForm.bind(this));
     this.#workouts.forEach(work => this._renderWorkoutMarker(work));
+    const workoutGroup = L.featureGroup([...this.#markers]).getBounds();
+    const { _northEast, _southWest } = workoutGroup;
+    console.log(_northEast, _southWest);
+    this.#map.fitBounds([
+      [this.#workoutGroup._northEast.lat, this.#workoutGroup._northEast.lng],
+      [this.#workoutGroup._southWest.lat, this.#workoutGroup._southWest.lng],
+    ]);
+
+    console.log(this.#workoutGroup);
   }
   _showForm(mapE) {
     this.#mapEvent = mapE;
@@ -148,7 +160,12 @@ class App {
       .openPopup();
     console.log(mark);
     console.log(workout);
+    console.log(this.#markers);
+
     this.#markers.push((this.#markers[workout.id] = mark));
+    this.#workoutGroup = L.featureGroup([...this.#markers]).getBounds();
+    console.log(this.#workoutGroup);
+    console.log(this.#workoutGroup._northEast.lat);
   }
   _renderWorkout(workout) {
     let html = `
