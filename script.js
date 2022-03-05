@@ -6,6 +6,8 @@ import { Cycling } from './cycling.js';
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+const startWorkout = document.querySelector('.start');
+const stopWorkout = document.querySelector('.stop');
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
 const inputType = document.querySelector('.form__input--type');
@@ -23,56 +25,94 @@ let map, mapEvent;
 // });
 
 class App {
+  #coordinates = [];
+  #interval;
   #workoutGroup;
   #map;
   #markers = [];
   #mapEvent;
   #workouts = [];
   constructor() {
-    this._getPosition();
+    this._loadMap();
+    // this._getPosition();
     this._getLocalStorage();
 
     //Handling with events
+    startWorkout.addEventListener('click', this._getPosition.bind(this));
+    stopWorkout.addEventListener('click', this._stopPosition.bind(this));
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
+  _stopPosition(myInterval) {
+    myInterval = this.#interval;
+    navigator.geolocation.clearWatch(myInterval);
+    console.log('stop');
+  }
+
   _getPosition() {
+    if (navigator.geolocation) {
+      this.#interval = navigator.geolocation.watchPosition(data => {
+        console.log(data.coords.latitude);
+        this.#coordinates.push([data.coords.latitude, data.coords.longitude]);
+        console.log(this.#coordinates),
+          function () {
+            alert("Can't get yout current position");
+          };
+      });
+    }
+  }
+  //
+
+  _loadMap() {
     if (navigator.geolocation)
       navigator.geolocation.getCurrentPosition(
-        this._loadMap.bind(this),
+        position => {
+          const { latitude } = position.coords;
+          const { longitude } = position.coords;
+          const coords = [latitude, longitude];
+          // this._geolocation(...coords);
+          console.log(
+            `https://www.google.com.br/maps/@${latitude},${longitude}`
+          );
+          console.log(this.#markers);
+
+          this.#map = L.map('map').setView(coords, 13);
+
+          L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          }).addTo(this.#map);
+
+          this.#map.on('click', this._showForm.bind(this));
+          this.#workouts.forEach(work => this._renderWorkoutMarker(work));
+          const workoutGroup = L.featureGroup([...this.#markers]).getBounds();
+          const { _northEast, _southWest } = workoutGroup;
+          console.log(_northEast, _southWest);
+          this.#map.fitBounds([
+            [
+              this.#workoutGroup._northEast.lat,
+              this.#workoutGroup._northEast.lng,
+            ],
+            [
+              this.#workoutGroup._southWest.lat,
+              this.#workoutGroup._southWest.lng,
+            ],
+          ]);
+
+          console.log(this.#workoutGroup);
+          L.polyline([
+            [41, -111.03],
+            [45, -111.04],
+            [40, -104.05],
+            [41, -104.05],
+          ]).addTo(this.#map);
+        },
         function () {
           alert("Can't get yout current position");
         }
       );
-  }
-
-  _loadMap(position) {
-    const { latitude } = position.coords;
-    const { longitude } = position.coords;
-    const coords = [latitude, longitude];
-    // this._geolocation(...coords);
-    console.log(`https://www.google.com.br/maps/@${latitude},${longitude}`);
-    console.log(this.#markers);
-
-    this.#map = L.map('map').setView(coords, 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.#map);
-    this.#map.on('click', this._showForm.bind(this));
-    this.#workouts.forEach(work => this._renderWorkoutMarker(work));
-    const workoutGroup = L.featureGroup([...this.#markers]).getBounds();
-    const { _northEast, _southWest } = workoutGroup;
-    console.log(_northEast, _southWest);
-    this.#map.fitBounds([
-      [this.#workoutGroup._northEast.lat, this.#workoutGroup._northEast.lng],
-      [this.#workoutGroup._southWest.lat, this.#workoutGroup._southWest.lng],
-    ]);
-
-    console.log(this.#workoutGroup);
   }
   _showForm(mapE) {
     this.#mapEvent = mapE;
