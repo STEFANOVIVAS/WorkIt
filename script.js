@@ -71,13 +71,8 @@ class App {
     const myInterval = this.#interval;
     navigator.geolocation.clearWatch(myInterval);
     console.log('stop');
-    const coordinates = this.#coordinates;
-    const myLines = {
-      type: 'LineString',
-      coordinates: coordinates,
-    };
-    L.geoJSON(myLines).addTo(this.#map);
-    console.log(coordinates);
+    console.log(this.#coordinates);
+
     this.#cron._pause();
     console.log(this.#cron.seconds);
     //create a workout object
@@ -120,7 +115,8 @@ class App {
 
     // this.#map.on('click', this._showForm.bind(this));
     this.#workouts.forEach(work => this._renderWorkoutMarker(work));
-    const workoutGroup = L.featureGroup([...this.#markers]).getBounds();
+    const groupMarkers = this.#markers.map(array => array[0]);
+    const workoutGroup = L.featureGroup(groupMarkers).getBounds();
     const { _northEast, _southWest } = workoutGroup;
     console.log(_northEast, _southWest);
 
@@ -131,19 +127,6 @@ class App {
       ]);
     }
     console.log(this.#workoutGroup);
-    // L.marker(coords)
-    //   .addTo(this.#map)
-    //   .bindPopup(
-    //     L.popup({
-    //       maxWidth: 250,
-    //       minWidth: 100,
-    //       autoClose: false,
-    //       closeOnClick: false,
-    //       // className: `${workout.type}-popup`,
-    //     })
-    //   )
-    //   .setPopupContent(`You are here!`)
-    //   .openPopup();
   }
   _showForm(mapE) {
     this.#mapEvent = mapE;
@@ -265,14 +248,25 @@ class App {
       )
       .setPopupContent(`${workout.type} in ${workout.locationInfo}`)
       .openPopup();
+
+    const coordinates = workout.coords.map(arr => [arr[1], arr[0]]);
+    console.log(coordinates);
+    const myLines = {
+      type: 'LineString',
+      coordinates: coordinates,
+    };
+    const geoLines = L.geoJSON(myLines).addTo(this.#map);
+
+    // console.log(geoLines);
     console.log(mark);
-    console.log(workout);
+    // setTimeout(() => this.#map.removeLayer(geoLines), 3000);
+
+    this.#markers.push((this.#markers[workout.id] = [mark, geoLines]));
+    const groupMarkers = this.#markers.map(array => array[0]);
+    this.#workoutGroup = L.featureGroup(groupMarkers).getBounds();
     console.log(this.#markers);
 
-    this.#markers.push((this.#markers[workout.id] = mark));
-    this.#workoutGroup = L.featureGroup([...this.#markers]).getBounds();
-    console.log(this.#workoutGroup);
-    console.log(this.#workoutGroup._northEast.lat);
+    // console.log(this.#workoutGroup._northEast.lat);
   }
   _renderWorkout(workout) {
     let html = `
@@ -305,9 +299,7 @@ class App {
         <div class="delete--workout">
             <button class="delete__button">Delete &#128465</button>
         </div>
-        <div class="edit--workout">
-          <button class="edit__button">Edit
-        </div>
+        
       </li>`;
 
     form.insertAdjacentHTML('afterend', html);
@@ -315,9 +307,9 @@ class App {
     const deleteWorkoutBtn = document.querySelector('.delete--workout');
     deleteWorkoutBtn.addEventListener('click', this._deleteWorkout.bind(this));
     //edit button
-    const editWorkoutBtn = document.querySelector('.edit--workout');
-    editWorkoutBtn.addEventListener('click', this._editWorkout.bind(this));
-    console.log(editWorkoutBtn);
+    // const editWorkoutBtn = document.querySelector('.edit--workout');
+    // editWorkoutBtn.addEventListener('click', this._editWorkout.bind(this));
+    // console.log(editWorkoutBtn);
   }
   _moveToPopup(e) {
     const workoutEl = e.target.closest('.workout');
@@ -360,59 +352,61 @@ class App {
     this._setLocalStorage();
     //Remove workout marker from map
     const markerId = workoutElement.dataset.id;
-    this.#map.removeLayer(this.#markers[markerId]);
+    this.#map.removeLayer(this.#markers[markerId][0]);
+    this.#map.removeLayer(this.#markers[markerId][1]);
+
     //Remove workout div from index.html
     workoutElement.remove();
   }
-  _editWorkout(e) {
-    //find element
-    const workoutElement = e.target.closest('.workout');
-    const workoutIndex = workoutElement.dataset.id;
-    const workout = this.#workouts.find(
-      work => work.id === workoutElement.dataset.id
-    );
+  // _editWorkout(e) {
+  //   //find element
+  //   const workoutElement = e.target.closest('.workout');
+  //   const workoutIndex = workoutElement.dataset.id;
+  //   const workout = this.#workouts.find(
+  //     work => work.id === workoutElement.dataset.id
+  //   );
 
-    //get original data from form
+  //   //get original data from form
 
-    const workoutDistance = workoutElement.querySelector(
-      '.workout__value--distance'
-    );
-    const workoutDuration = workoutElement.querySelector(
-      '.workout__value--duration'
-    );
+  //   const workoutDistance = workoutElement.querySelector(
+  //     '.workout__value--distance'
+  //   );
+  //   const workoutDuration = workoutElement.querySelector(
+  //     '.workout__value--duration'
+  //   );
 
-    const workoutCadence = workoutElement.querySelector(
-      '.workout__value--cadence'
-    );
-    const workoutPace = workoutElement.querySelector('.workout__value--pace');
-    const workoutSpeed = workoutElement.querySelector('.workout__value--speed');
-    const workoutElevation = workoutElement.querySelector(
-      '.workout__value--elevation'
-    );
+  //   const workoutCadence = workoutElement.querySelector(
+  //     '.workout__value--cadence'
+  //   );
+  //   const workoutPace = workoutElement.querySelector('.workout__value--pace');
+  //   const workoutSpeed = workoutElement.querySelector('.workout__value--speed');
+  //   const workoutElevation = workoutElement.querySelector(
+  //     '.workout__value--elevation'
+  //   );
 
-    //hide workout div
-    this._deleteWorkout(e);
-    //show form of this element with original data and type
-    this._showForm(this.#markers[workoutIndex]._latlng);
-    form.classList.remove('hidden');
-    if (workout.type === 'Running') {
-      inputDistance.value = workoutDistance.textContent;
-      inputDuration.value = workoutDuration.textContent;
-      inputCadence.value = workoutCadence.textContent;
-    }
+  //   //hide workout div
+  //   this._deleteWorkout(e);
+  //   //show form of this element with original data and type
+  //   this._showForm(this.#markers[workoutIndex]._latlng);
+  //   form.classList.remove('hidden');
+  //   if (workout.type === 'Running') {
+  //     inputDistance.value = workoutDistance.textContent;
+  //     inputDuration.value = workoutDuration.textContent;
+  //     inputCadence.value = workoutCadence.textContent;
+  //   }
 
-    if (workout.type === 'Cycling') {
-      inputType.value = 'Cycling';
-      inputElevation
-        .closest('.form__row')
-        .classList.remove('form__row--hidden');
-      inputCadence.closest('.form__row').classList.add('form__row--hidden');
+  //   if (workout.type === 'Cycling') {
+  //     inputType.value = 'Cycling';
+  //     inputElevation
+  //       .closest('.form__row')
+  //       .classList.remove('form__row--hidden');
+  //     inputCadence.closest('.form__row').classList.add('form__row--hidden');
 
-      inputDistance.value = workoutDistance.textContent;
-      inputDuration.value = workoutDuration.textContent;
-      inputElevation.value = workoutElevation.textContent;
-    }
-  }
+  //     inputDistance.value = workoutDistance.textContent;
+  //     inputDuration.value = workoutDuration.textContent;
+  //     inputElevation.value = workoutElevation.textContent;
+  //   }
+  // }
   _addNewWorkout(workout) {
     fetch(
       `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0][0]}&lon=${workout.coords[0][1]}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`

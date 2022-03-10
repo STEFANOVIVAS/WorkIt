@@ -2,12 +2,13 @@ export class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
 
-  constructor(coords, distance, duration, elevation, type) {
+  constructor(coords, distance, duration, elevation, type, lines) {
     this.coords = coords;
     this.distance = distance;
     this.duration = duration;
     this.elevation = elevation;
     this.type = type;
+    this.lines = lines;
     this._calcPace();
     this._setDescription();
   }
