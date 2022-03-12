@@ -18,7 +18,7 @@ export class Workout {
     })} ${this.date.getDate()}`;
   }
   _calcPace() {
-    this.pace = this.duration / this.distance;
+    this.pace = (this.duration / this.distance).toFixed(5);
     return this.pace;
   }
 }

@@ -48,9 +48,9 @@ class App {
     //Handling with events
     resumeWorkout.addEventListener('click', this._resumeWorkout.bind(this));
     pauseWorkout.addEventListener('click', this._pauseWorkout.bind(this));
-    startWorkout.addEventListener('click', this._newWorkout.bind(this));
+    startWorkout.addEventListener('click', this._startWorkout.bind(this));
     stopWorkout.addEventListener('click', this._stopWorkout.bind(this));
-    form.addEventListener('submit', this._newWorkout.bind(this));
+    // form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
@@ -115,18 +115,18 @@ class App {
 
     // this.#map.on('click', this._showForm.bind(this));
     this.#workouts.forEach(work => this._renderWorkoutMarker(work));
-    const groupMarkers = this.#markers.map(array => array[0]);
-    const workoutGroup = L.featureGroup(groupMarkers).getBounds();
-    const { _northEast, _southWest } = workoutGroup;
-    console.log(_northEast, _southWest);
+    // const groupMarkers = this.#markers.map(array => array[0]);
+    // const workoutGroup = L.featureGroup(groupMarkers).getBounds();
+    // const { _northEast, _southWest } = workoutGroup;
+    // console.log(_northEast, _southWest);
 
-    if (this.#workoutGroup) {
-      this.#map.fitBounds([
-        [this.#workoutGroup._northEast.lat, this.#workoutGroup._northEast.lng],
-        [this.#workoutGroup._southWest.lat, this.#workoutGroup._southWest.lng],
-      ]);
-    }
-    console.log(this.#workoutGroup);
+    // if (this.#workoutGroup) {
+    //   this.#map.fitBounds([
+    //     [this.#workoutGroup._northEast.lat, this.#workoutGroup._northEast.lng],
+    //     [this.#workoutGroup._southWest.lat, this.#workoutGroup._southWest.lng],
+    //   ]);
+    // }
+    // console.log(this.#workoutGroup);
   }
   _showForm(mapE) {
     this.#mapEvent = mapE;
@@ -153,22 +153,9 @@ class App {
     inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
   }
 
-  _newWorkout(e) {
+  _startWorkout(e) {
     e.preventDefault();
-    const validData = (...inputs) => inputs.every(inp => Number.isFinite(inp));
-    const positiveInteger = (...inputs) => inputs.every(inp => inp > 0);
-
-    //watching position to draw lines
-    if (navigator.geolocation) {
-      this.#interval = navigator.geolocation.watchPosition(data => {
-        console.log(data.coords);
-        this.#coordinates.push([data.coords.latitude, data.coords.longitude]);
-        console.log(this.#coordinates),
-          function () {
-            alert("Can't get yout current position");
-          };
-      });
-    }
+    //start timer
     let cron = new Cron(secondSpan, minuteSpan, hourSpan);
     this.#cron = cron;
     this.#cron._start();
@@ -176,51 +163,65 @@ class App {
     pauseWorkout.classList.remove('hidden');
     stopWorkout.classList.remove('hidden');
 
-    //start timer
+    //watching position to draw lines
+    if (navigator.geolocation) {
+      this.#interval = navigator.geolocation.watchPosition(data => {
+        console.log(data.coords);
+        this.#coordinates.push(
+          L.latLng([data.coords.latitude, data.coords.longitude])
+        );
+        console.log(this.#coordinates),
+          function () {
+            alert("Can't get yout current position");
+          };
+      });
+    }
   }
   _createWorkout() {
     let workout;
     //get data from form
     const type = inputType.value;
-    const distance = 2;
+    const distance = (this._totalDistance() / 1000).toFixed(2);
+
+    console.log(distance);
+    this.#coordinates;
+    // console.log(geoLines);
+    // const totalLenghtIndex = Object.keys(
+    //   geoLines._measurementLayer._layers
+    // ).slice(-1)[0];
+    // console.log(
+    //   geoLines._measurementLayer._layers[totalLenghtIndex]._measurement
+    // );
+
+    // const distance = parseInt(
+    //   geoLines._measurementLayer._layers[totalLenghtIndex]._measurement
+    // );
+    // this.markers;
+    // console.log(typeof distance);
+    // const from = markerFrom.getLatLng();
+    // const to = markerTo.getLatLng();
+    // this.#map.addLayer(markerTo);
+    // this.#map.addLayer(markerFrom);
+    // getDistance(from, to);
+    // console.log(from);
+    // console.log(to);
+    // const distance = (
+    //   this.#coordinates[0].distanceTo(this.#coordinates.slice(-1)[0]) / 1000
+    // ).toFixed(2);
+
     const elevation = 3;
 
-    const duration = (
+    const duration = Number(
       (this.#cron.hours * 60 + this.#cron.minutes * 60 + this.#cron.seconds) /
-      60
+        60
     ).toFixed(2);
-    console.log(duration);
+    console.log(typeof duration);
 
     const pace = this.#cron.pace;
     // const { lat, lng } = this.#mapEvent.latlng
     //   ? this.#mapEvent.latlng
     //   : this.#mapEvent;
 
-    //check if data is valid//
-    //if workout type running, create running object
-    // if (type === 'Running') {
-    //   const cadence = +inputCadence.value;
-    //   if (
-    //     !validData(distance, duration, cadence) ||
-    //     !positiveInteger(distance, duration, cadence)
-    //   ) {
-    //     return alert('Please insert positive numbers');
-    //   }
-
-    //   workout = new Running([lat, lng], distance, duration, cadence);
-    // }
-    //if workout type Cycling, create cycling object
-    // if (type === 'Cycling') {
-    //   const elevationGain = +inputElevation.value;
-    //   if (
-    //     !validData(distance, duration, elevationGain) ||
-    //     !positiveInteger(distance, duration)
-    //   ) {
-    //     return alert('Please insert positive numbers');
-    //   }
-
-    //   workout = new Cycling([lat, lng], distance, duration, elevationGain);
-    // }
     workout = new Workout(
       this.#coordinates,
       distance,
@@ -235,7 +236,7 @@ class App {
   }
 
   _renderWorkoutMarker(workout) {
-    let mark = L.marker(workout.coords[0])
+    const mark = L.marker(workout.coords[0])
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -248,25 +249,47 @@ class App {
       )
       .setPopupContent(`${workout.type} in ${workout.locationInfo}`)
       .openPopup();
-
-    const coordinates = workout.coords.map(arr => [arr[1], arr[0]]);
-    console.log(coordinates);
-    const myLines = {
-      type: 'LineString',
-      coordinates: coordinates,
-    };
-    const geoLines = L.geoJSON(myLines).addTo(this.#map);
-
-    // console.log(geoLines);
     console.log(mark);
+    const geoLines = L.polyline(workout.coords).addTo(this.#map);
+    // const coordinates = workout.coords.map(arr => [arr[1], arr[0]]);
+    // console.log(coordinates);
+    // const myLines = {
+    //   type: 'LineString',
+    //   coordinates: coordinates,
+    // };
+    // const geoLines = L.geoJSON(myLines).addTo(this.#map);
+
+    // console.log(
+    //   geoLines.updateMeasurements(totalDist => console.log(totalDist))
+    // );
+    // console.log(geoLines);
+    // const totalLenghtIndex = Object.keys(
+    //   geoLines._measurementLayer._layers
+    // ).slice(-1)[0];
+    // console.log(
+    //   geoLines._measurementLayer._layers[totalLenghtIndex]._measurement
+    // );
     // setTimeout(() => this.#map.removeLayer(geoLines), 3000);
 
     this.#markers.push((this.#markers[workout.id] = [mark, geoLines]));
-    const groupMarkers = this.#markers.map(array => array[0]);
-    this.#workoutGroup = L.featureGroup(groupMarkers).getBounds();
+
+    // const groupMarkers = this.#markers.map(array => array[0]);
+    // this.#workoutGroup = L.featureGroup(groupMarkers).getBounds();
     console.log(this.#markers);
 
     // console.log(this.#workoutGroup._northEast.lat);
+  }
+  _totalDistance() {
+    let len = this.#coordinates.length;
+    let ll1, ll2, dist;
+    let totalDist = 0;
+    for (let i = 1; i < len; i++) {
+      ll1 = this.#coordinates[i - 1];
+      ll2 = this.#coordinates[i % len];
+      dist = ll1.distanceTo(ll2);
+      totalDist += dist;
+    }
+    return totalDist;
   }
   _renderWorkout(workout) {
     let html = `
@@ -320,9 +343,10 @@ class App {
     );
     if (!workout) return;
     console.log(workout);
-    this.#map.setView(workout.coords, 14);
+    this.#map.setView(workout.coords[0], 14);
   }
   _setLocalStorage() {
+    console.log(this.#workouts);
     localStorage.setItem(`workouts`, JSON.stringify(this.#workouts));
   }
 
@@ -354,7 +378,6 @@ class App {
     const markerId = workoutElement.dataset.id;
     this.#map.removeLayer(this.#markers[markerId][0]);
     this.#map.removeLayer(this.#markers[markerId][1]);
-
     //Remove workout div from index.html
     workoutElement.remove();
   }
@@ -409,7 +432,7 @@ class App {
   // }
   _addNewWorkout(workout) {
     fetch(
-      `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0][0]}&lon=${workout.coords[0][1]}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
+      `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0].lat}&lon=${workout.coords[0].lng}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
     )
       .then(response => {
         if (!response.ok)
@@ -423,7 +446,6 @@ class App {
       .then(workout => {
         this.#workouts.push(workout);
         console.log(this.#workouts);
-
         //render workout object on map as a marker
         // this._renderWorkoutMarker(workout);
         this._renderWorkoutMarker(workout);
