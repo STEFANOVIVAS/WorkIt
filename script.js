@@ -4,6 +4,9 @@ import { Running } from './running.js';
 import { Cycling } from './cycling.js';
 import { Workout } from './workout.js';
 import { Cron } from './cron.js';
+// import 'regenerator-runtime/runtime';
+// import { Topography } from '.leaflet-topography';
+// import Topography from 'leaflet-topography';
 
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -179,35 +182,14 @@ class App {
   }
   _createWorkout() {
     let workout;
+
     //get data from form
     const type = inputType.value;
     const distance = (this._totalDistance() / 1000).toFixed(2);
 
+    // this._elevationGain();
     console.log(distance);
     this.#coordinates;
-    // console.log(geoLines);
-    // const totalLenghtIndex = Object.keys(
-    //   geoLines._measurementLayer._layers
-    // ).slice(-1)[0];
-    // console.log(
-    //   geoLines._measurementLayer._layers[totalLenghtIndex]._measurement
-    // );
-
-    // const distance = parseInt(
-    //   geoLines._measurementLayer._layers[totalLenghtIndex]._measurement
-    // );
-    // this.markers;
-    // console.log(typeof distance);
-    // const from = markerFrom.getLatLng();
-    // const to = markerTo.getLatLng();
-    // this.#map.addLayer(markerTo);
-    // this.#map.addLayer(markerFrom);
-    // getDistance(from, to);
-    // console.log(from);
-    // console.log(to);
-    // const distance = (
-    //   this.#coordinates[0].distanceTo(this.#coordinates.slice(-1)[0]) / 1000
-    // ).toFixed(2);
 
     const elevation = 3;
 
@@ -218,23 +200,34 @@ class App {
     console.log(typeof duration);
 
     const pace = this.#cron.pace;
-    // const { lat, lng } = this.#mapEvent.latlng
-    //   ? this.#mapEvent.latlng
-    //   : this.#mapEvent;
 
-    workout = new Workout(
-      this.#coordinates,
-      distance,
-      duration,
-      elevation,
-      type
-    );
-    this.#coordinates = [];
-    console.log(workout);
-    //async function to render location and then add new object to workout array
-    this._addNewWorkout(workout);
+    this._elevationGain().then(elevation => {
+      workout = new Workout(
+        this.#coordinates,
+        distance,
+        duration,
+        elevation,
+        type
+      );
+      console.log(elevation);
+      this.#coordinates = [];
+
+      //async function to render location and then add new object to workout array
+      this._addNewWorkout(workout);
+    });
   }
+  _elevationGain() {
+    const options = {
+      token:
+        'pk.eyJ1Ijoic3RlZmFub3ZpdmFzIiwiYSI6ImNsMG8yZzd0bzFtMzkzaWw0bDQ5aHZ0cjMifQ.SE3bsA0q__9_gm7G5Vh6rA',
+    };
+    const elevationGain = Promise.all([
+      Topography.getTopography(this.#coordinates[0], options),
+      Topography.getTopography(this.#coordinates.slice(-1)[0], options),
+    ]).then(elevation => elevation[1].elevation - elevation[0].elevation);
 
+    return elevationGain;
+  }
   _renderWorkoutMarker(workout) {
     const mark = L.marker(workout.coords[0])
       .addTo(this.#map)
@@ -251,25 +244,6 @@ class App {
       .openPopup();
     console.log(mark);
     const geoLines = L.polyline(workout.coords).addTo(this.#map);
-    // const coordinates = workout.coords.map(arr => [arr[1], arr[0]]);
-    // console.log(coordinates);
-    // const myLines = {
-    //   type: 'LineString',
-    //   coordinates: coordinates,
-    // };
-    // const geoLines = L.geoJSON(myLines).addTo(this.#map);
-
-    // console.log(
-    //   geoLines.updateMeasurements(totalDist => console.log(totalDist))
-    // );
-    // console.log(geoLines);
-    // const totalLenghtIndex = Object.keys(
-    //   geoLines._measurementLayer._layers
-    // ).slice(-1)[0];
-    // console.log(
-    //   geoLines._measurementLayer._layers[totalLenghtIndex]._measurement
-    // );
-    // setTimeout(() => this.#map.removeLayer(geoLines), 3000);
 
     this.#markers.push((this.#markers[workout.id] = [mark, geoLines]));
 
@@ -381,55 +355,7 @@ class App {
     //Remove workout div from index.html
     workoutElement.remove();
   }
-  // _editWorkout(e) {
-  //   //find element
-  //   const workoutElement = e.target.closest('.workout');
-  //   const workoutIndex = workoutElement.dataset.id;
-  //   const workout = this.#workouts.find(
-  //     work => work.id === workoutElement.dataset.id
-  //   );
 
-  //   //get original data from form
-
-  //   const workoutDistance = workoutElement.querySelector(
-  //     '.workout__value--distance'
-  //   );
-  //   const workoutDuration = workoutElement.querySelector(
-  //     '.workout__value--duration'
-  //   );
-
-  //   const workoutCadence = workoutElement.querySelector(
-  //     '.workout__value--cadence'
-  //   );
-  //   const workoutPace = workoutElement.querySelector('.workout__value--pace');
-  //   const workoutSpeed = workoutElement.querySelector('.workout__value--speed');
-  //   const workoutElevation = workoutElement.querySelector(
-  //     '.workout__value--elevation'
-  //   );
-
-  //   //hide workout div
-  //   this._deleteWorkout(e);
-  //   //show form of this element with original data and type
-  //   this._showForm(this.#markers[workoutIndex]._latlng);
-  //   form.classList.remove('hidden');
-  //   if (workout.type === 'Running') {
-  //     inputDistance.value = workoutDistance.textContent;
-  //     inputDuration.value = workoutDuration.textContent;
-  //     inputCadence.value = workoutCadence.textContent;
-  //   }
-
-  //   if (workout.type === 'Cycling') {
-  //     inputType.value = 'Cycling';
-  //     inputElevation
-  //       .closest('.form__row')
-  //       .classList.remove('form__row--hidden');
-  //     inputCadence.closest('.form__row').classList.add('form__row--hidden');
-
-  //     inputDistance.value = workoutDistance.textContent;
-  //     inputDuration.value = workoutDuration.textContent;
-  //     inputElevation.value = workoutElevation.textContent;
-  //   }
-  // }
   _addNewWorkout(workout) {
     fetch(
       `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0].lat}&lon=${workout.coords[0].lng}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
