@@ -18,11 +18,14 @@
   },
   "homepage": "https://github.com/STEFANOVIVAS/mapty#readme",
   "dependencies": {
+    "axios": "^0.26.1",
     "core-js": "^3.21.1",
     "leaflet": "^1.7.1",
+    "leaflet-topography": "^0.2.1",
     "regenerator-runtime": "^0.13.9"
   },
   "devDependencies": {
-    "parcel": "^2.3.2"
+    "parcel": "^2.3.2",
+    "process": "^0.11.10"
   }
 }

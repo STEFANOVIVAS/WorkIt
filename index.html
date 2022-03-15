@@ -13,13 +13,46 @@
 
     <link rel="stylesheet" href="style.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+    
     <script defer src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    
     <script type="module" defer src="script.js"></script>
+    <!-- <script type="module" src="https://unpkg.com/regenerator-runtime" type="text/javascript"></script>
+    <script type="module" src="https://unpkg.com/leaflet-topography" type="text/javascript"></script> -->
+   
+    
+    
     <title>mapty // Map your workouts</title>
   </head>
   <body>
     <div class="sidebar">
       <img src="logo.png" alt="Logo" class="logo" />
+      <div class="create__workout">
+        <form class="new__workout">
+          <div class="workout__header">
+            <div class="form__row">
+              <h2 class="workout__title">New Workout</h2>
+              <select class="form__input form__input--type">
+                <option value="Running">Running</option>
+                <option value="Cycling">Cycling</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="activities__control form__row">
+            <h2 class="Timer">Timer: <span id="hour">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span></h2>
+            <div class="buttons">
+              <button type="button" class="button__start">Start</button>
+              <button type="button" class="button__pause hidden">Pause</button>
+              <button type="button" class="button__resume hidden">Resume</button>
+              <button type="button" class="button__stop ">Finish</button> 
+            </div>
+          </div>
+        </form>
+        
+        
+        
+      </div>
 
       <ul class="workouts">
         <form class="form hidden">
