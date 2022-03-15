@@ -1,12 +1,13 @@
 'use strict';
-
+import axios from 'axios';
 import { Running } from './running.js';
 import { Cycling } from './cycling.js';
 import { Workout } from './workout.js';
 import { Cron } from './cron.js';
-// import 'regenerator-runtime/runtime';
-// import { Topography } from '.leaflet-topography';
-// import Topography from 'leaflet-topography';
+import 'regenerator-runtime/runtime';
+import leaflet from 'leaflet';
+
+import Topography from 'leaflet-topography';
 
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -117,6 +118,7 @@ class App {
     }).addTo(this.#map);
 
     // this.#map.on('click', this._showForm.bind(this));
+    console.log(this.#workouts);
     this.#workouts.forEach(work => this._renderWorkoutMarker(work));
     // const groupMarkers = this.#markers.map(array => array[0]);
     // const workoutGroup = L.featureGroup(groupMarkers).getBounds();
@@ -179,6 +181,7 @@ class App {
           };
       });
     }
+    //insert start position mark
   }
   _createWorkout() {
     let workout;
@@ -188,11 +191,7 @@ class App {
     const distance = (this._totalDistance() / 1000).toFixed(2);
 
     // this._elevationGain();
-    console.log(distance);
-    this.#coordinates;
-
-    const elevation = 3;
-
+    console.log(this.#coordinates);
     const duration = Number(
       (this.#cron.hours * 60 + this.#cron.minutes * 60 + this.#cron.seconds) /
         60
@@ -201,32 +200,50 @@ class App {
 
     const pace = this.#cron.pace;
 
-    this._elevationGain().then(elevation => {
-      workout = new Workout(
-        this.#coordinates,
-        distance,
-        duration,
-        elevation,
-        type
-      );
-      console.log(elevation);
-      this.#coordinates = [];
+    this._getWorkoutData()
+      .then(workoutData => {
+        const elevationGain = Number(
+          workoutData[1].elevation - workoutData[0].elevation
+        ).toFixed(1);
+        workout = new Workout(
+          this.#coordinates,
+          distance,
+          duration,
+          elevationGain,
+          type,
+          workoutData[2].data.features[0].properties.city
+        );
 
-      //async function to render location and then add new object to workout array
-      this._addNewWorkout(workout);
-    });
+        this.#coordinates = [];
+        console.log(workout.coords[0].lat);
+
+        //async function to render location and then add new object to workout array
+        this._addNewWorkout(workout);
+      })
+      .catch(error => console.log(error));
   }
-  _elevationGain() {
-    const options = {
-      token:
-        'pk.eyJ1Ijoic3RlZmFub3ZpdmFzIiwiYSI6ImNsMG8yZzd0bzFtMzkzaWw0bDQ5aHZ0cjMifQ.SE3bsA0q__9_gm7G5Vh6rA',
-    };
-    const elevationGain = Promise.all([
-      Topography.getTopography(this.#coordinates[0], options),
-      Topography.getTopography(this.#coordinates.slice(-1)[0], options),
-    ]).then(elevation => elevation[1].elevation - elevation[0].elevation);
+  async _getWorkoutData() {
+    try {
+      const options = {
+        token:
+          'pk.eyJ1Ijoic3RlZmFub3ZpdmFzIiwiYSI6ImNsMG8yZzd0bzFtMzkzaWw0bDQ5aHZ0cjMifQ.SE3bsA0q__9_gm7G5Vh6rA',
+      };
+      const workoutData = await Promise.all([
+        Topography.getTopography(this.#coordinates[0], options),
+        Topography.getTopography(this.#coordinates.slice(-1)[0], options),
+        axios.get(
+          `https://api.geoapify.com/v1/geocode/reverse?lat=${
+            this.#coordinates[0].lat
+          }&lon=${
+            this.#coordinates[0].lng
+          }&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
+        ),
+      ]);
 
-    return elevationGain;
+      return workoutData;
+    } catch (err) {
+      console.log(`${err}`);
+    }
   }
   _renderWorkoutMarker(workout) {
     const mark = L.marker(workout.coords[0])
@@ -240,7 +257,7 @@ class App {
           className: `${workout.type}-popup`,
         })
       )
-      .setPopupContent(`${workout.type} in ${workout.locationInfo}`)
+      .setPopupContent(`${workout.type} in ${workout.location}`)
       .openPopup();
     console.log(mark);
     const geoLines = L.polyline(workout.coords).addTo(this.#map);
@@ -357,36 +374,37 @@ class App {
   }
 
   _addNewWorkout(workout) {
-    fetch(
-      `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0].lat}&lon=${workout.coords[0].lng}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
-    )
-      .then(response => {
-        if (!response.ok)
-          throw new Error(`Location doesn't existis. Please try again!`);
-        return response.json();
-      })
-      .then(result => {
-        workout.locationInfo = `${result.features[0].properties.city} - ${result.features[0].properties.country}`;
-        return workout;
-      })
-      .then(workout => {
-        this.#workouts.push(workout);
-        console.log(this.#workouts);
-        //render workout object on map as a marker
-        // this._renderWorkoutMarker(workout);
-        this._renderWorkoutMarker(workout);
+    // axios
+    //   .get(
+    //     `https://api.geoapify.com/v1/geocode/reverse?lat=${workout.coords[0].lat}&lon=${workout.coords[0].lng}&apiKey=b1b509d1849544b3a7afca6aa08b85cb`
+    //   )
+    //   .then(response => {
+    //     if (!response.ok)
+    //       throw new Error(`Location doesn't existis. Please try again!`);
+    //     workout.locationInfo = `${result.features[0].properties.city} - ${result.features[0].properties.country}`;
+    //     return workout;
+    //   })
+    //   .then(result => {
+    //     workout.locationInfo = `${result.features[0].properties.city} - ${result.features[0].properties.country}`;
+    //     return workout;
+    //   })
+    //   .then(workout => {
+    this.#workouts.push(workout);
+    console.log(this.#workouts);
+    //render workout object on map as a marker
+    // this._renderWorkoutMarker(workout);
+    this._renderWorkoutMarker(workout);
 
-        //render workout on list
-        this._renderWorkout(workout);
+    //render workout on list
+    this._renderWorkout(workout);
 
-        //Storage data in local storage api
-        this._setLocalStorage();
+    //Storage data in local storage api
+    this._setLocalStorage();
 
-        //hidden form and clear data
-        this._hideForm();
-      })
-      .catch(error => console.log(error));
+    //hidden form and clear data
+    this._hideForm();
   }
+  // .catch(error => console.log(error));
 }
 
 const app = new App();
