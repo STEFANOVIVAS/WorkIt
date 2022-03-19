@@ -21,6 +21,7 @@
     "axios": "^0.26.1",
     "core-js": "^3.21.1",
     "leaflet": "^1.7.1",
+    "leaflet-image": "^0.4.0",
     "leaflet-topography": "^0.2.1",
     "regenerator-runtime": "^0.13.9"
   },

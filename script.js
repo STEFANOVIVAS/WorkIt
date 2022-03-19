@@ -6,8 +6,10 @@ import { Workout } from './workout.js';
 import { Cron } from './cron.js';
 import 'regenerator-runtime/runtime';
 import leaflet from 'leaflet';
+import leafletImage from 'leaflet-image';
 
 import Topography from 'leaflet-topography';
+import { featureGroup } from 'leaflet';
 
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -26,6 +28,8 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+const showAllWorkouts = document.querySelector('.all__workouts');
+const currentPosition = document.querySelector('.get__position');
 
 // console.log(deleteWorkoutBtn);
 // console.log(inputElevation);
@@ -37,9 +41,11 @@ let map, mapEvent;
 
 class App {
   #cron;
+  #lines = [];
   #coordinates = [];
+  #startMarker;
   #interval;
-  #workoutGroup;
+  #position = [];
   #map;
   #markers = [];
   #mapEvent;
@@ -48,6 +54,7 @@ class App {
     // this._loadMap();
     this._getPosition();
     this._getLocalStorage();
+    // this._getLocation();
 
     //Handling with events
     resumeWorkout.addEventListener('click', this._resumeWorkout.bind(this));
@@ -57,9 +64,9 @@ class App {
     // form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+    showAllWorkouts.addEventListener('click', this._showAllWorkouts.bind(this));
+    currentPosition.addEventListener('click', this._centerMap.bind(this));
   }
-
-  _stopPosition(myInterval) {}
 
   _getPosition() {
     if (navigator.geolocation)
@@ -71,68 +78,40 @@ class App {
       );
   }
 
-  _stopWorkout() {
-    const myInterval = this.#interval;
-    navigator.geolocation.clearWatch(myInterval);
-    console.log('stop');
-    console.log(this.#coordinates);
-
-    this.#cron._pause();
-    console.log(this.#cron.seconds);
-    //create a workout object
-    //save in database
-    this._createWorkout();
-    this.#cron._reset();
-    pauseWorkout.classList.add('hidden');
-    startWorkout.classList.remove('hidden');
-
-    resumeWorkout.classList.add('hidden');
-    //render workout
-  }
-  _pauseWorkout() {
-    pauseWorkout.classList.add('hidden');
-    resumeWorkout.classList.remove('hidden');
-    this.#cron._pause();
-  }
-  _resumeWorkout() {
-    resumeWorkout.classList.add('hidden');
-    pauseWorkout.classList.remove('hidden');
-
-    this.#cron._start();
-  }
-  //
-
   _loadMap(position) {
     const { latitude } = position.coords;
     const { longitude } = position.coords;
     const coords = [latitude, longitude];
+    console.log(coords);
     // this._geolocation(...coords);
     console.log(`https://www.google.com.br/maps/@${latitude},${longitude}`);
     console.log(this.#markers);
 
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map', { preferCanvas: true }).setView(coords, 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
+    console.log(this.#map.getSize());
 
     // this.#map.on('click', this._showForm.bind(this));
     console.log(this.#workouts);
     this.#workouts.forEach(work => this._renderWorkoutMarker(work));
-    // const groupMarkers = this.#markers.map(array => array[0]);
-    // const workoutGroup = L.featureGroup(groupMarkers).getBounds();
-    // const { _northEast, _southWest } = workoutGroup;
-    // console.log(_northEast, _southWest);
-
-    // if (this.#workoutGroup) {
-    //   this.#map.fitBounds([
-    //     [this.#workoutGroup._northEast.lat, this.#workoutGroup._northEast.lng],
-    //     [this.#workoutGroup._southWest.lat, this.#workoutGroup._southWest.lng],
-    //   ]);
-    // }
-    // console.log(this.#workoutGroup);
+    console.log(this.#map);
+    this.#map.setView(coords, 15);
   }
+
+  _centerMap() {
+    if (navigator.geolocation)
+      navigator.geolocation.getCurrentPosition(position =>
+        this.#map.setView(
+          [position.coords.latitude, position.coords.longitude],
+          15
+        )
+      );
+  }
+
   _showForm(mapE) {
     this.#mapEvent = mapE;
     console.log(this.#mapEvent);
@@ -167,7 +146,46 @@ class App {
     startWorkout.classList.add('hidden');
     pauseWorkout.classList.remove('hidden');
     stopWorkout.classList.remove('hidden');
+    if (navigator.geolocation)
+      navigator.geolocation.getCurrentPosition(
+        position =>
+          (this.#startMarker = L.marker([
+            position.coords.latitude,
+            position.coords.longitude,
+          ]).addTo(this.#map))
+      );
+    this._drawLines();
+    // this.#startMarker = L.marker(this.#coordinates[0])
+    //       .addTo(this.#map)
+    //       .bindPopup(
+    //         L.popup({
+    //           maxWidth: 250,
+    //           minWidth: 100,
+    //           autoClose: false,
+    //           closeOnClick: false,
+    //           // className: `${workout.type}-popup`,
+    //         })
+    //       )
+    //       .setPopupContent(`Running`)
+    //       .openPopup();
+  }
+  //insert start position mark
+  // this.#startMarker = L.marker(this.#coordinates[0].getLatLng())
+  //   .addTo(this.#map)
+  //   .bindPopup(
+  //     L.popup({
+  //       maxWidth: 250,
+  //       minWidth: 100,
+  //       autoClose: false,
+  //       closeOnClick: false,
+  //       // className: `${workout.type}-popup`,
+  //     })
+  //   )
+  //   .setPopupContent(`Running`)
+  //   .openPopup();
+  // console.log(this.#startMarker.getLatLng());
 
+  _drawLines() {
     //watching position to draw lines
     if (navigator.geolocation) {
       this.#interval = navigator.geolocation.watchPosition(data => {
@@ -175,14 +193,54 @@ class App {
         this.#coordinates.push(
           L.latLng([data.coords.latitude, data.coords.longitude])
         );
-        console.log(this.#coordinates),
+        this.#position.push(
+          L.circleMarker([data.coords.latitude, data.coords.longitude]).addTo(
+            this.#map
+          )
+        );
+        // this.#map.setView(this.#coordinates[0], 13);
+        //remove all layers to drw new lines
+        this.#map.panTo([data.coords.latitude, data.coords.longitude]),
           function () {
             alert("Can't get yout current position");
           };
       });
     }
-    //insert start position mark
   }
+  _drawPath() {
+    this.#position = L.circleMarker([...this.#coordinates]).addTo(this.#map);
+    this.position;
+  }
+  _stopWorkout() {
+    const myInterval = this.#interval;
+    navigator.geolocation.clearWatch(myInterval);
+    console.log('stop');
+    console.log(this.#coordinates);
+
+    this.#cron._pause();
+    console.log(this.#cron.seconds);
+    //create a workout object
+    //save in database
+    this._createWorkout();
+    this.#cron._reset();
+    pauseWorkout.classList.add('hidden');
+    startWorkout.classList.remove('hidden');
+
+    resumeWorkout.classList.add('hidden');
+    //render workout
+  }
+  _pauseWorkout() {
+    pauseWorkout.classList.add('hidden');
+    resumeWorkout.classList.remove('hidden');
+    this.#cron._pause();
+  }
+  _resumeWorkout() {
+    resumeWorkout.classList.add('hidden');
+    pauseWorkout.classList.remove('hidden');
+
+    this.#cron._start();
+  }
+
   _createWorkout() {
     let workout;
 
@@ -246,7 +304,7 @@ class App {
     }
   }
   _renderWorkoutMarker(workout) {
-    const mark = L.marker(workout.coords[0])
+    const startMarker = L.marker(workout.coords[0])
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -259,11 +317,31 @@ class App {
       )
       .setPopupContent(`${workout.type} in ${workout.location}`)
       .openPopup();
-    console.log(mark);
+
+    if (this.#startMarker) this.#startMarker.remove(this.#map);
+    this.#coordinates[0];
+    const endMark = L.marker(workout.coords.slice(-1)[0]).addTo(this.#map);
     const geoLines = L.polyline(workout.coords).addTo(this.#map);
-
-    this.#markers.push((this.#markers[workout.id] = [mark, geoLines]));
-
+    // const endMark = L.marker(workout.coords.slice(-1)[0]);
+    console.log(endMark);
+    console.log(this.#lines);
+    // const groupMarkers = L.featureGroup(startMark, geoLines, endMark);
+    // console.log(groupMarkers);
+    this.#markers.push(
+      (this.#markers[workout.id] = [startMarker, geoLines, endMark])
+    );
+    // leafletImage(this.#map, function (err, canvas) {
+    //   // now you have canvas
+    //   // example thing to do with that canvas:
+    //   const img = document.createElement('img');
+    //   console.log(this.#map);
+    //   const dimensions = this.#map.getSize();
+    //   img.width = dimensions.x;
+    //   img.height = dimensions.y;
+    //   img.src = canvas.toDataURL();
+    //   document.querySelector('workout--${workout.id}').innerHTML = '';
+    //   document.querySelector(`workout--${workout.id}`).appendChild(img);
+    // });
     // const groupMarkers = this.#markers.map(array => array[0]);
     // this.#workoutGroup = L.featureGroup(groupMarkers).getBounds();
     console.log(this.#markers);
@@ -286,6 +364,7 @@ class App {
     let html = `
       <li class="workout workout--" 
       data-id="${workout.id}">
+        
         <h2 class="workout__title">${workout.description}</h2>
         <div class="workout__details">
           <span class="workout__icon">${
@@ -334,10 +413,9 @@ class App {
     );
     if (!workout) return;
     console.log(workout);
-    this.#map.setView(workout.coords[0], 14);
+    this.#map.fitBounds([...workout.coords], 14);
   }
   _setLocalStorage() {
-    console.log(this.#workouts);
     localStorage.setItem(`workouts`, JSON.stringify(this.#workouts));
   }
 
@@ -367,12 +445,37 @@ class App {
     this._setLocalStorage();
     //Remove workout marker from map
     const markerId = workoutElement.dataset.id;
+    // remove all layers from workout
+    console.log(this.#markers);
+    console.log(this.#markers[markerId]);
+    console.log(this.#lines);
+    this.#map.eachLayer(layer => console.log(layer));
+    // this.#lines.map(line => this.#map.removeLayer(line));
+    // const polyline = this.#lines;
+    // polyline.remove(this.#map);
+    console.log(this.#position);
+    this.#position.forEach(position => this.#map.removeLayer(position));
     this.#map.removeLayer(this.#markers[markerId][0]);
     this.#map.removeLayer(this.#markers[markerId][1]);
+    this.#map.removeLayer(this.#markers[markerId][2]);
+
+    console.log(this.#coordinates);
+    // this.#map.removeLayer(this.#lines);
+    // this.#lines.clearLayers();
+    // this.#map.removeLayer(this.#lines[0]);
+    // this.#map.removeLayer(this.#lines[1]);
+
+    // this.#map.removeLayer(this.#markers[markerId]);
+    // this.#markers[markerId].map(layer => this.#map.removeLayer(layer));
+    // this.#map.removeLayer(this.#markers[markerId]);
     //Remove workout div from index.html
+    console.log(this.lines);
     workoutElement.remove();
   }
-
+  _showAllWorkouts() {
+    const bounds = this.#workouts.map(work => work.coords);
+    this.#map.fitBounds(bounds);
+  }
   _addNewWorkout(workout) {
     // axios
     //   .get(
@@ -397,6 +500,9 @@ class App {
 
     //render workout on list
     this._renderWorkout(workout);
+    const bounds = L.latLngBounds([...workout.coords]);
+
+    this.#map.fitBounds(bounds);
 
     //Storage data in local storage api
     this._setLocalStorage();
