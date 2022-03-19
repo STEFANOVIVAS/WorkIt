@@ -280,3 +280,27 @@ a:visited {
   display: flex;
   justify-content: space-between;
 }
+
+.all__workouts {
+  position: relative;
+  top: 80px;
+  left: 10px;
+  border-radius: 1rem;
+  padding: 5px;
+  border: 1px solid black;
+  z-index: 500;
+}
+.get__position {
+  position: relative;
+  top: 110px;
+  left: -110px;
+  border-radius: 1rem;
+  padding: 5px;
+  border: 1px solid black;
+  z-index: 500;
+}
+#map__sample {
+  height: 300px;
+  width: 300px;
+  background-color: var(--color-light--1);
+}
