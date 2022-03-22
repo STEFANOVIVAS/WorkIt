@@ -13,6 +13,10 @@ Work it is a web-based platform that keeps track of users' workout activities, s
    * [Author](#Author)
    * [License](#License)
 
+<img src='./work-it-screen1.png'>
+<img src='./work-it-screen2.png'>
+
+
 # Status
 :construction: Under construction :construction:
 
