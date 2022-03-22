@@ -21,6 +21,7 @@ Work it is a web-based platform that keeps track of users' workout activities, s
 - [x] Get latitude and longitude in real time and render users position on the map.
 - [x] Calculate distance traveled between several point with leaflet API.
 - [x] Calculate elevation gain with leaflet-topography API.
+- [x] Get users' location
 - [x] Render workout data. 
 - [x] Render workout path on the map.
 - [x] Delete workouts.
