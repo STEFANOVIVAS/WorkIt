@@ -38,14 +38,10 @@ https://worki-t.netlify.app/
 
 # How to run the aplication
 
-* Clone the repository. git clone https://github.com/STEFANOVIVAS/Educa
-* Create your own virtual environment.
-* Install your requirements.
-* Create a new PostgreSQL database.
-* Generate a new secret key.
-* Rename the project.
-* Make your migrations.
-* Create a new superuser.
+* Clone the repository. git clone https://github.com/STEFANOVIVAS/WorkIt your-destination-folder
+* cd your-destination-folder
+* npm install # installing the dependencies
+* npm start # or 'node .'
 
 # Technologies
 
@@ -58,9 +54,5 @@ https://worki-t.netlify.app/
 
 # Auhtor
 
-
 [<img src="https://avatars.githubusercontent.com/u/71469098?v=4"><br><sub>Stefano Vivas</sub>](https://github.com/STEFANOVIVAS)
-
-# License
-Educa is MIT Licensed
 
